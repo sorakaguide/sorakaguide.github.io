@@ -1,0 +1,2416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soraka Calculator</title>
+  <style>
+    body {
+      background-color: #1a1a1a;
+      color: #e0e0e0;
+      font-family: sans-serif;
+      padding: 20px;
+      zoom: 1.1;
+    }
+
+    .resistance-inputs {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .resistance-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .resistance-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #aaa;
+    }
+
+    .resistance-field input[type="number"] {
+      width: 70px;
+      background: #1a1a1a;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-size: 0.9rem;
+      padding: 4px 8px;
+      text-align: left;
+    }
+
+    .resistance-field input[type="number"]:focus {
+      outline: none;
+      border-color: #888;
+    }
+
+    .resistance-field input[type="number"]::-webkit-inner-spin-button,
+    .resistance-field input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+    }
+
+    .resistance-field input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    #control-panel label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    #control-panel label:last-child {
+      margin-bottom: 0;
+    }
+
+    #top-actions {
+      position: fixed;
+      top: 20px;
+      left: 0;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: 8px;
+    }
+
+    #top-actions button {
+      background: none;
+      border: 1px solid #555;
+      border-radius: 4px;
+      color: #888;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 4px 10px;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+
+    #top-actions button:hover {
+      border-color: #aaa;
+      color: #ccc;
+    }
+
+    #top-actions button.btn-success {
+      border-color: #4ade80;
+      color: #4ade80;
+    }
+
+    #debug-toggles {
+      position: fixed;
+      top: 50px;
+      left: 0;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    #debug-toggles label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #555;
+      cursor: pointer;
+      user-select: none;
+    }
+    #debug-toggles input { cursor: pointer; accent-color: #888; }
+    #debug-toggles label:hover { color: #888; }
+
+    @keyframes debug-flash {
+      0%   { outline: 2px solid rgba(255, 200, 0, 0.8); }
+      100% { outline: 2px solid rgba(255, 200, 0, 0); }
+    }
+    .debug-flash         { animation: debug-flash 0.4s ease-out; }
+    .debug-flash-change  { animation: debug-flash 0.4s ease-out; }
+
+    #bg-centerpiece {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+#bg-text {
+      position: relative;
+      text-align: center;
+      font-size: clamp(0.9rem, 2.5vw, 3.3rem);
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      line-height: 1.05;
+      color: rgba(148, 68, 210, 0.48);
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+      user-select: none;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 16px;
+      width: 100%;
+    }
+
+    #item-table-panel {
+      margin-left: auto;
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 16px;
+    }
+
+    .top-row {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      gap: 16px;
+    }
+
+    #item-table-panel {
+      min-width: 360px;
+    }
+
+    #item-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .item-icon {
+      width: 20px;
+      height: 20px;
+      vertical-align: middle;
+      margin-right: 5px;
+      border-radius: 3px;
+    }
+
+    #item-table th {
+      text-align: left;
+      color: #aaa;
+      font-weight: normal;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      padding: 0 12px 8px 0;
+      border-bottom: 1px solid #444;
+    }
+
+    #item-table th:not(:first-child),
+    #item-table td:not(:first-child) {
+      text-align: right;
+      padding-right: 0;
+      padding-left: 24px;
+    }
+
+    #item-table td {
+      padding: 6px 12px 6px 0;
+      border-bottom: 1px solid #2e2e2e;
+      color: #e0e0e0;
+    }
+
+    #item-table td:first-child {
+      color: #ccc;
+    }
+
+    #item-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    #item-table td:nth-child(8) {
+      color: #facc15;
+    }
+
+    #item-table td:nth-child(9) {
+      color: #86efac;
+    }
+
+    #item-table td:nth-child(2) {
+      color: #c4b5fd;
+    }
+
+    #item-table td:nth-child(3) {
+      color: #86efac;
+    }
+
+    #item-table td:nth-child(4) {
+      color: #ffffff;
+    }
+
+    #item-table td:nth-child(5) {
+      color: #7dd3fc;
+    }
+
+    #item-table td:nth-child(6) {
+      color: #3b82f6;
+    }
+
+    #item-table thead th {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #item-table thead th:hover {
+      color: #ccc;
+    }
+
+    #item-table thead th.sort-active {
+      color: #e0e0e0;
+    }
+
+    #item-table thead th.sort-active::after {
+      content: ' ↑';
+      font-size: 0.75em;
+      opacity: 0.7;
+    }
+
+    #item-table thead th[data-sort-dir="desc"]::after {
+      content: ' ↓';
+    }
+
+    #item-table th.section-label,
+    #item-table tr.section-divider td {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #555;
+      font-weight: normal;
+    }
+
+    #item-table tr.section-divider td {
+      padding-top: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #444;
+    }
+
+    .panel {
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 16px 20px;
+      background-color: #242424;
+      position: relative;
+    }
+
+    .top-right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 0 0 auto;
+      width: fit-content;
+    }
+
+    .top-right-col .panel {
+      flex: 1;
+    }
+
+    .stats-content {
+      display: grid;
+      grid-template-rows: repeat(4, auto);
+      grid-auto-flow: column;
+      gap: 6px 20px;
+    }
+
+    #stats-panel .stat-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 0.95rem;
+    }
+
+    #stats-panel .stat-value {
+      font-size: 1.1rem;
+      font-weight: bold;
+      min-width: 40px;
+      text-align: right;
+    }
+
+    #stat-ap  { color: #c4b5fd; }
+    #stat-hsp { color: #86efac; }
+    #stat-ah  { color: #ffffff; }
+    #stat-rgn { color: #7dd3fc; }
+    #stat-ms-pct { color: #ffffff; }
+    #stat-ms     { color: #ffffff; }
+    #stat-mna { color: #3b82f6; }
+    #stat-gld { color: #facc15; }
+
+    .sa-combo-row {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      gap: 16px;
+    }
+
+    .ability-row {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      gap: 16px;
+    }
+
+    .sa-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    #combo-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .combo-heals-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .combo-breakdowns-row {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      border-top: 1px solid #333;
+      padding-top: 8px;
+    }
+
+    .combo-breakdown {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.8rem;
+    }
+
+    .breakdown-label {
+      color: #999;
+    }
+
+    .breakdown-value {
+      color: #86efac;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .breakdown-value.negative {
+      color: #f87171;
+    }
+
+    .combo-left {
+      flex: 1;
+    }
+
+    .combo-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .combo-desc {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+
+    .combo-total-label {
+      font-size: 0.75rem;
+      font-weight: bold;
+      letter-spacing: 0.08em;
+      color: #888;
+      text-transform: uppercase;
+    }
+
+    .combo-total-value {
+      font-size: 1.6rem;
+      font-weight: bold;
+    }
+
+    .combo-value-row {
+      position: relative;
+      display: inline-flex;
+      align-items: baseline;
+    }
+
+    .combo-diff {
+      position: absolute;
+      left: calc(100% + 6px);
+      bottom: 0;
+      font-size: 0.8rem;
+      font-weight: normal;
+      white-space: nowrap;
+    }
+    .combo-diff.positive { color: #3fb950; }
+    .combo-diff.negative { color: #f85149; }
+    .hide-combo-diff .combo-diff { visibility: hidden; }
+
+    .combo-divider {
+      width: 1px;
+      align-self: stretch;
+      background: #444;
+      margin: 0 12px;
+    }
+
+    #stats-panel .stat-name {
+      color: #aaa;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px 0;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #aaa;
+    }
+
+    .rank-slider-wrap {
+      width: 240px;
+    }
+
+    .rank-labels {
+      position: relative;
+      height: 1.1em;
+      margin-bottom: 6px;
+    }
+
+    .rank-labels span {
+      position: absolute;
+      transform: translateX(-50%);
+      font-size: 0.8rem;
+      color: #888;
+      white-space: nowrap;
+      transition: color 0.1s;
+    }
+
+    .rank-labels span.active {
+      color: #c4b5fd;
+      font-weight: bold;
+    }
+
+    .rank-values, .rank-cooldowns {
+      margin-bottom: 0;
+      margin-top: 6px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 24px;
+      border-radius: 2px;
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+      display: block;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 2px;
+      background: #444;
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 4px;
+      border-radius: 2px;
+      background: #444;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #8a6fff;
+      cursor: pointer;
+      border: 2px solid #c4b5fd;
+      margin-top: -7px;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #8a6fff;
+      cursor: pointer;
+      border: 2px solid #c4b5fd;
+    }
+
+    .ability-row .panel {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ability-inner {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex: 1;
+      gap: 12px;
+    }
+
+    .output-frame {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 24px;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background-color: #1e1e1e;
+    }
+
+    .calc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      font-size: 0.9rem;
+    }
+
+    .calc-label {
+      color: #888;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    .calc-value {
+      font-weight: bold;
+      color: #e0e0e0;
+    }
+
+    .ap-scaling {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      display: flex;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    .ap-damage {
+      color: #c4b5fd;
+    }
+
+    .ap-healing {
+      color: #86efac;
+    }
+
+    #starcall .rank-duration span,
+    #astral-infusion .rank-values span {
+      color: #4a7a5a;
+    }
+
+    #starcall .rank-duration span.active,
+    #astral-infusion .rank-values span.active {
+      color: #86efac;
+    }
+
+    #equinox .rank-duration span {
+      color: #3a6080;
+    }
+
+    #equinox .rank-duration span.active {
+      color: #7dd3fc;
+    }
+
+    #starcall .rank-movespeed span {
+      color: #888;
+    }
+
+    .items-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .items-header h2 {
+      margin: 0;
+    }
+
+    .item-toggles {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .toggle-switch {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-switch input[type="checkbox"] {
+      display: none;
+    }
+
+    .toggle-pill {
+      width: 28px;
+      height: 15px;
+      background: #333;
+      border: 1px solid #444;
+      border-radius: 8px;
+      position: relative;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .toggle-pill::after {
+      content: '';
+      position: absolute;
+      width: 11px;
+      height: 11px;
+      background: #555;
+      border-radius: 50%;
+      top: 1px;
+      left: 1px;
+      transition: transform 0.15s, background 0.15s;
+    }
+
+    .toggle-switch input:checked + .toggle-pill {
+      background: #1a3320;
+      border-color: #2d5a3d;
+    }
+
+    .toggle-switch input:checked + .toggle-pill::after {
+      transform: translateX(13px);
+      background: #86efac;
+    }
+
+    .toggle-switch-text {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #555;
+    }
+
+    .toggle-switch input:checked ~ .toggle-switch-text {
+      color: #888;
+    }
+
+    #center-col {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    #runes-panel {
+      width: fit-content;
+    }
+
+    #runes-panel .runes-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    #runes-panel .runes-header h2 {
+      margin: 0;
+    }
+
+    .level-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .level-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #888;
+    }
+
+    #level-slider {
+      width: 120px;
+    }
+
+    .runes-header .clear-btn {
+      position: static;
+      margin-left: auto;
+    }
+
+    .gs-slider-wrap {
+      width: 160px;
+      margin-top: 8px;
+    }
+
+    .hunter-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .hunter-slider-row input[type="range"] {
+      flex: 1;
+    }
+
+    #hunter-stacks-value {
+      font-size: 0.8rem;
+      color: #aaa;
+      min-width: 10px;
+    }
+
+    #level-value {
+      font-size: 0.9rem;
+      color: #aaa;
+      min-width: 24px;
+    }
+
+    #runes-panel .runes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, max-content);
+      gap: 8px 16px;
+      align-items: start;
+    }
+
+    .rune-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .rune-delta {
+      font-size: 0.72rem;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    #delta-absolute-focus, #delta-gathering-storm,
+    #delta-shard-af-1, #delta-shard-af-2 { color: #c4b5fd; }
+    #delta-revitalize { color: #86efac; }
+    #delta-transcendence, #delta-ultimate-hunter, #delta-shard-ah,
+    #delta-celerity, #delta-relentless-hunter, #delta-shard-ms { color: #fff; }
+
+    #runes-panel .rune-group,
+    #runes-panel .stat-shards {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 10px 12px;
+      background-color: #1e1e1e;
+    }
+
+    #runes-panel .runes-grid label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .hli-mode-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .hli-mode-group .hli-mode-label {
+      color: #555;
+      margin-right: 2px;
+    }
+
+    .hli-mode-group label {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      color: #555;
+      user-select: none;
+    }
+
+    .hli-mode-group input[type="radio"] {
+      display: none;
+    }
+
+    .hli-mode-btn {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #222;
+      border: 1px solid #333;
+      color: #555;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: background 0.1s, color 0.1s, border-color 0.1s;
+    }
+
+    .hli-mode-group input:checked + .hli-mode-btn {
+      background: #1a3320;
+      border-color: #2d5a3d;
+      color: #86efac;
+    }
+
+    #item-table.no-dividers .section-divider {
+      display: none;
+    }
+
+    #item-table td.dash-cell { color: transparent; }
+
+    .clear-btn {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #666;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 7px;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+
+    .clear-btn:hover {
+      border-color: #888;
+      color: #aaa;
+    }
+
+    #starcall .rank-movespeed span.active {
+      color: #ffffff;
+    }
+
+    #item-table tbody tr:not(.section-divider) {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .stack-badge {
+      color: #bbb;
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin-right: 5px;
+    }
+
+    #item-table tbody tr:not(.section-divider):hover {
+      background-color: #2a2a2a;
+    }
+
+    #item-table tbody tr.selected {
+      background-color: #363636;
+    }
+
+    #item-table tbody tr.selected:hover {
+      background-color: #404040;
+    }
+    #tooltip {
+      position: fixed;
+      z-index: 9999;
+      background: #2a2a2a;
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-family: sans-serif;
+      font-size: 0.75rem;
+      color: #ccc;
+      max-width: 240px;
+      pointer-events: none;
+      display: none;
+      line-height: 1.5;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="top-actions">
+    <button id="clear-all">CLEAR ALL</button>
+    <button id="export-state">EXPORT</button>
+    <button id="import-state">IMPORT</button>
+  </div>
+  <div id="debug-toggles">
+    <label><input type="checkbox" id="debug-flashes"> Debug Flashes (on update)</label>
+    <label><input type="checkbox" id="debug-flashes-onchange" checked> Debug Flashes (on change)</label>
+    <label><input type="checkbox" id="debug-diff"> DEBUG DIFF (ON OP)</label>
+  </div>
+  <div id="center-col">
+    <div id="runes-panel" class="panel">
+      <div class="runes-header">
+        <h2>Runes</h2>
+        <button class="clear-btn" id="runes-clear">Clear</button>
+      </div>
+      <div class="runes-grid">
+        <div style="display:flex;flex-direction:column;gap:8px;align-self:start">
+          <div class="rune-group">
+            <label class="rune-label"><span><input type="checkbox" id="transcendence"> Transcendence</span><span class="rune-delta" id="delta-transcendence"></span></label>
+            <label class="rune-label"><span><input type="checkbox" id="celerity"> Celerity</span><span class="rune-delta" id="delta-celerity"></span></label>
+            <label class="rune-label"><span><input type="checkbox" id="absolute-focus"> Absolute Focus</span><span class="rune-delta" id="delta-absolute-focus"></span></label>
+          </div>
+          <div class="rune-group">
+            <label class="rune-label"><span><input type="checkbox" id="relentless-hunter"> Relentless Hunter</span><span class="rune-delta" id="delta-relentless-hunter"></span></label>
+            <label class="rune-label"><span><input type="checkbox" id="ultimate-hunter"> Ultimate Hunter</span><span class="rune-delta" id="delta-ultimate-hunter"></span></label>
+            <div class="hunter-slider-row">
+              <span class="level-label">STACKS</span>
+              <input type="range" id="hunter-stacks" min="0" max="5" step="1" value="0">
+              <span id="hunter-stacks-value">0</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-self:start">
+          <div class="rune-group">
+            <label class="rune-label"><span><input type="checkbox" id="waterwalking"> Waterwalking</span><span class="rune-delta" id="delta-waterwalking"><span id="delta-waterwalking-ap" style="color:#c4b5fd"></span><span id="delta-waterwalking-ms" style="color:#fff"></span></span></label>
+            <label class="rune-label"><span><input type="checkbox" id="gathering-storm"> Gathering Storm</span><span class="rune-delta" id="delta-gathering-storm"></span></label>
+            <div class="gs-slider-wrap rank-slider-wrap">
+              <div class="rank-labels">
+                <span class="active">10m</span>
+                <span>20m</span>
+                <span>30m</span>
+                <span>40m</span>
+                <span>50m</span>
+              </div>
+              <input type="range" id="gs-slider" class="rank-slider" min="1" max="5" step="1" value="1">
+              <div class="rank-labels rank-values">
+                <span class="active">8</span>
+                <span>24</span>
+                <span>48</span>
+                <span>80</span>
+                <span>120</span>
+              </div>
+            </div>
+          </div>
+          <div class="level-slider-row">
+            <span class="level-label">LEVEL</span>
+            <input type="range" id="level-slider" min="1" max="18" step="1" value="1">
+            <span id="level-value">1</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-self:start">
+          <div class="stat-shards">
+            <label class="rune-label"><span><input type="checkbox" id="shard-ah"> Ability Haste</span><span class="rune-delta" id="delta-shard-ah"></span></label>
+            <label class="rune-label"><span><input type="checkbox" id="shard-ms"> Move Speed</span><span class="rune-delta" id="delta-shard-ms"></span></label>
+            <label class="rune-label"><span><input type="checkbox" id="shard-af-1"> Adaptive Force</span><span class="rune-delta" id="delta-shard-af-1"></span></label>
+            <label class="rune-label"><span><input type="checkbox" id="shard-af-2"> Adaptive Force</span><span class="rune-delta" id="delta-shard-af-2"></span></label>
+          </div>
+          <label style="opacity: 0.25; pointer-events: none;"><input type="checkbox" disabled> Jack of All Trades (NYI)</label>
+          <label class="rune-label"><span><input type="checkbox" id="axiom-arcanist" checked> Axiom Arcanist</span><span class="rune-delta" id="delta-axiom-arcanist"></span></label>
+          <label class="rune-label"><span><input type="checkbox" id="revitalize" checked> Revitalize</span><span class="rune-delta" id="delta-revitalize"></span></label>
+        </div>
+      </div>
+    </div>
+    <div id="combo-panel" class="panel">
+      <div class="combo-heals-row">
+        <div class="combo-left">
+          <h2>Mini-Combo</h2>
+          <p class="combo-desc">1x Q 1x W</p>
+        </div>
+        <div class="combo-right">
+          <span class="combo-total-label">TOTAL</span>
+          <div class="combo-value-row"><span class="combo-total-value ap-healing" id="mini-combo-total">—</span><span class="combo-diff" id="mini-combo-diff"></span></div>
+        </div>
+        <div class="combo-divider"></div>
+        <div class="combo-left">
+          <h2>Combo</h2>
+          <p class="combo-desc">1x Q 2x W</p>
+        </div>
+        <div class="combo-right">
+          <span class="combo-total-label">TOTAL</span>
+          <div class="combo-value-row"><span class="combo-total-value ap-healing" id="combo-total">—</span><span class="combo-diff" id="combo-diff"></span></div>
+        </div>
+      </div>
+      <div class="combo-breakdowns-row">
+        <div id="mini-combo-breakdown" class="combo-breakdown"></div>
+        <div class="combo-divider"></div>
+        <div id="combo-breakdown" class="combo-breakdown"></div>
+      </div>
+    </div>
+  </div>
+  <div id="tooltip"></div>
+  <div id="bg-centerpiece">
+    <div id="bg-text">LUPA WAS HERE</div>
+  </div>
+  <div class="page">
+  <div class="layout">
+    <div class="top-row">
+      <div id="control-panel" class="panel">
+        <h2>Options</h2>
+        <button class="clear-btn" id="clear-options">Clear</button>
+        <label data-tooltip="Activate Wish (& Revitalize if selected) 40% HP threshold bonus effect."><input type="checkbox" id="wish-40"> Ally under 40%</label>
+        <label data-tooltip="40% healing reduction."><input type="checkbox" id="grievous-wounds"> Grievous Wounds</label>
+        <label data-tooltip="+40 AP / +15 AH to SofW in item list (recommended)."><input type="checkbox" id="staff-of-flowing-water" checked> Staff of Flowing Water</label>
+        <label data-tooltip="In the Q+W+W combo, SofW's +40 AP bonus applies to Q and the 2nd W only — not the 1st W."><input type="checkbox" id="sofw-delay"> SOFW Delay</label>
+        <label data-tooltip="25% healing taken increase."><input type="checkbox" id="spirit-visage"> Spirit Visage</label>
+        <div class="resistance-inputs">
+          <div class="resistance-field">
+            <label class="resistance-label" data-tooltip="Show healing outputs as if the enemy had to chew through your ally's Armor."><input type="checkbox" id="use-armor"> Armor</label>
+            <input type="number" id="input-armor" min="0" value="">
+          </div>
+          <div class="resistance-field">
+            <label class="resistance-label" data-tooltip="Show healing outputs as if the enemy had to chew through your ally's Magic Resist."><input type="checkbox" id="use-mr"> MRes</label>
+            <input type="number" id="input-mr" min="0" value="">
+          </div>
+        </div>
+      </div>
+
+      <div class="top-right-col">
+        <div id="stats-panel" class="panel">
+          <h2>Stats</h2>
+          <div class="stats-content">
+            <div class="stat-row"><span class="stat-value" id="stat-ap">0</span><span class="stat-name">AP</span></div>
+            <div class="stat-row"><span class="stat-value" id="stat-hsp">0</span><span class="stat-name">HsP</span></div>
+            <div class="stat-row"><span class="stat-value" id="stat-ah">0</span><span class="stat-name">AH</span></div>
+            <div class="stat-row"><span class="stat-value" id="stat-rgn">0</span><span class="stat-name">RGN</span></div>
+            <div class="stat-row"><span class="stat-value" id="stat-ms-pct">0</span><span class="stat-name">MS%</span></div>
+            <div class="stat-row"><span class="stat-value" id="stat-ms">325</span><span class="stat-name">MS</span></div>
+            <div class="stat-row"><span class="stat-value" id="stat-mna">0</span><span class="stat-name">MNA</span></div>
+            <div class="stat-row"><span class="stat-value" id="stat-gld">0</span><span class="stat-name">GLD</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="ability-row">
+    <div id="starcall" class="panel">
+      <h2>Starcall</h2>
+      <div class="ability-inner">
+        <div class="rank-slider-wrap">
+          <div class="rank-labels">
+            <span>1</span>
+            <span class="active">2</span>
+            <span>3</span>
+            <span>4</span>
+            <span>5</span>
+          </div>
+          <input type="range" class="rank-slider" min="1" max="5" step="1" value="2">
+          <div class="rank-labels rank-values">
+            <span class="active">85</span>
+            <span>120</span>
+            <span>155</span>
+            <span>190</span>
+            <span>225</span>
+          </div>
+          <div class="rank-labels rank-duration">
+            <span class="active">60</span>
+            <span>75</span>
+            <span>90</span>
+            <span>105</span>
+            <span>120</span>
+          </div>
+          <div class="rank-labels rank-movespeed">
+            <span class="active">20%</span>
+            <span>22.5%</span>
+            <span>25%</span>
+            <span>27.5%</span>
+            <span>30%</span>
+          </div>
+          <div class="rank-labels rank-cooldowns">
+            <span class="active">8s</span>
+            <span>7s</span>
+            <span>6s</span>
+            <span>5s</span>
+            <span>4s</span>
+          </div>
+        </div>
+        <div class="output-frame">
+          <div class="calc-row"><span class="calc-label">Dam</span><span class="calc-value ap-damage" id="starcall-dam">—</span></div>
+          <div class="calc-row"><span class="calc-label">DPS</span><span class="calc-value ap-damage" id="starcall-dps">—</span></div>
+          <div class="calc-row"><span class="calc-label">Heal</span><span class="calc-value ap-healing" id="starcall-heal">—</span></div>
+          <div class="calc-row"><span class="calc-label">CD</span><span class="calc-value" id="starcall-cd">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="astral-infusion" class="panel">
+      <h2>Astral Infusion</h2>
+      <div class="ability-inner">
+        <div class="rank-slider-wrap">
+          <div class="rank-labels">
+            <span>1</span>
+            <span>2</span>
+            <span>3</span>
+            <span>4</span>
+            <span class="active">5</span>
+          </div>
+          <input type="range" class="rank-slider" min="1" max="5" step="1" value="5">
+          <div class="rank-labels rank-values">
+            <span>90</span>
+            <span>100</span>
+            <span>130</span>
+            <span>150</span>
+            <span class="active">170</span>
+          </div>
+          <div class="rank-labels rank-cooldowns">
+            <span class="active">6s</span>
+            <span>5s</span>
+            <span>4s</span>
+            <span>3s</span>
+            <span>2s</span>
+          </div>
+        </div>
+        <div class="output-frame" id="astral-calcs">
+          <div class="calc-row"><span class="calc-label">Heal</span><span class="calc-value ap-healing" id="astral-heal">—</span></div>
+          <div class="calc-row"><span class="calc-label">HPS</span><span class="calc-value ap-healing" id="astral-hps">—</span></div>
+          <div></div>
+          <div class="calc-row"><span class="calc-label">CD</span><span class="calc-value" id="astral-cd">—</span></div>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <div class="ability-row">
+    <div id="equinox" class="panel">
+      <h2>Equinox</h2>
+      <div class="ability-inner">
+        <div class="rank-slider-wrap">
+          <div class="rank-labels">
+            <span class="active">1</span>
+            <span>2</span>
+            <span>3</span>
+            <span>4</span>
+            <span>5</span>
+          </div>
+          <input type="range" class="rank-slider" min="1" max="5" step="1" value="1">
+          <div class="rank-labels rank-values">
+            <span class="active">70</span>
+            <span>95</span>
+            <span>120</span>
+            <span>145</span>
+            <span>170</span>
+          </div>
+          <div class="rank-labels rank-duration">
+            <span class="active">1s</span>
+            <span>1.25s</span>
+            <span>1.5s</span>
+            <span>1.75s</span>
+            <span>2s</span>
+          </div>
+          <div class="rank-labels rank-cooldowns">
+            <span class="active">20s</span>
+            <span>19s</span>
+            <span>18s</span>
+            <span>17s</span>
+            <span>16s</span>
+          </div>
+        </div>
+        <div class="output-frame">
+          <div class="calc-row"><span class="calc-label">Dam</span><span class="calc-value ap-damage" id="equinox-dam">—</span></div>
+          <div class="calc-row"><span class="calc-label">CD</span><span class="calc-value" id="equinox-cd">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="wish" class="panel">
+      <h2>Wish</h2>
+      <div class="ability-inner">
+        <div class="rank-slider-wrap">
+          <div class="rank-labels">
+            <span class="active">1</span>
+            <span>2</span>
+            <span>3</span>
+          </div>
+          <input type="range" class="rank-slider" min="1" max="3" step="1" value="1">
+          <div class="rank-labels rank-values">
+            <span class="active">150</span>
+            <span>250</span>
+            <span>350</span>
+          </div>
+          <div class="rank-labels rank-cooldowns">
+            <span class="active">150s</span>
+            <span>135s</span>
+            <span>120s</span>
+          </div>
+        </div>
+        <div class="output-frame">
+          <div class="calc-row"><span class="calc-label">Heal</span><span class="calc-value ap-healing" id="wish-heal">—</span></div>
+          <div class="calc-row"><span class="calc-label">CD</span><span class="calc-value" id="wish-cd">—</span></div>
+        </div>
+      </div>
+    </div>
+    </div>
+
+  </div>
+
+  <div id="item-table-panel" class="panel">
+    <div class="items-header">
+      <h2>Items</h2>
+      <div class="item-toggles">
+        <label class="toggle-switch" data-tooltip="Segregate items by category.">
+          <input type="checkbox" id="toggle-dividers">
+          <span class="toggle-pill"></span>
+          <span class="toggle-switch-text">Dividers</span>
+        </label>
+        <label class="toggle-switch" data-tooltip="Force selection to W (Astral Infusion) and replace HLI (Healing Increase) with HPSI (Healing per Second Increase).">
+          <input type="checkbox" id="hpsi-mode">
+          <span class="toggle-pill"></span>
+          <span class="toggle-switch-text">HPSI</span>
+        </label>
+        <div class="hli-mode-group">
+          <span class="hli-mode-label">HLI:</span>
+          <label data-tooltip="Set HLI (Healing Increase) to be based on Q."><input type="radio" name="hli-mode" class="hli-mode" id="hli-mode-q"><span class="hli-mode-btn">Q</span></label>
+          <label data-tooltip="Set HLI (Healing Increase) to be based on W."><input type="radio" name="hli-mode" class="hli-mode" id="hli-mode-w"><span class="hli-mode-btn">W</span></label>
+          <label data-tooltip="Set HLI (Healing Increase) to be based on R."><input type="radio" name="hli-mode" class="hli-mode" id="hli-mode-r"><span class="hli-mode-btn">R</span></label>
+          <label data-tooltip="Set HLI (Healing Increase) to be based on Combo."><input type="radio" name="hli-mode" class="hli-mode" id="hli-mode-combo" checked><span class="hli-mode-btn">Combo</span></label>
+          <label data-tooltip="Set HLI (Healing Increase) to be based on Mini-Combo (Q + W)."><input type="radio" name="hli-mode" class="hli-mode" id="hli-mode-mini"><span class="hli-mode-btn">Mini</span></label>
+        </div>
+        <label class="toggle-switch" data-tooltip="Defer re-sorting until the mouse leaves the items panel, so items don't jump while clicking.">
+          <input type="checkbox" id="smooth-sort" checked>
+          <span class="toggle-pill"></span>
+          <span class="toggle-switch-text">DEFER SORT</span>
+        </label>
+      </div>
+    </div>
+    <button class="clear-btn" id="clear-items">Clear</button>
+    <table id="item-table">
+      <thead>
+        <tr>
+          <th class="section-label">Base Items</th>
+          <th>AP</th>
+          <th>HsP</th>
+          <th>AH</th>
+          <th>RGN</th>
+          <th>MNA</th>
+          <th>MS%</th>
+          <th>GLD</th>
+          <th id="hli-header" data-tooltip="Healing Increase if you were to add this item, based on whatever input source (Q, W, R, Combo) was selected.">HLI</th>
+          <th data-tooltip="Healing Increase divided by gold cost of the item.">HpG</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1004.png" alt="">Faerie Charm</td><td>—</td><td>—</td><td>—</td><td>50%</td><td>—</td><td>—</td><td>200g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1052.png" alt="">Amplifying Tome</td><td>20</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>400g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3114.png" alt="">Forbidden Idol</td><td>—</td><td>8%</td><td>—</td><td>—</td><td>—</td><td>—</td><td>600g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/221026.png" alt="">Blasting Wand</td><td>45</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>850g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3108.png" alt="">Fiendish Codex</td><td>25</td><td>—</td><td>10</td><td>—</td><td>—</td><td>—</td><td>850g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/4642.png" alt="">Bandleglass Mirror</td><td>20</td><td>—</td><td>10</td><td>100%</td><td>—</td><td>—</td><td>900g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3113.png" alt="">Aether Wisp</td><td>30</td><td>—</td><td>—</td><td>—</td><td>—</td><td>4%</td><td>900g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr data-max-stacks="1"><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1082.png" alt="">Dark Seal 0s</td><td>15</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>350g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr data-max-stacks="1"><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1082.png" alt="">Dark Seal 5s</td><td>35</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>350g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr data-max-stacks="1"><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/1082.png" alt="">Dark Seal 10s</td><td>55</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>350g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/221058.png" alt="">Needlessly Large Rod</td><td>65</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>1200g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr class="section-divider"><td colspan="10">Medium Items</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3041.png" alt="">Mejai's Soulstealer 0s</td><td>20</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>1500g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3041.png" alt="">Mejai's Soulstealer 10s</td><td>70</td><td>—</td><td>—</td><td>—</td><td>—</td><td>10%</td><td>1500g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3041.png" alt="">Mejai's Soulstealer 25s</td><td>145</td><td>—</td><td>—</td><td>—</td><td>—</td><td>10%</td><td>1500g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/4632.png" alt="">Verdant Barrier</td><td>40</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>1600g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/2420.png" alt="">Seeker's Armguard</td><td>40</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>1600g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr class="section-divider"><td colspan="10">Full Items</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3102.png" alt="">Banshee's Veil</td><td>105</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>3000g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3157.png" alt="">Zhonya's Hourglass</td><td>105</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>3250g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr data-no-hsp data-moonstone><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6617.png" alt="">Moonstone</td><td>25</td><td>30%*</td><td>20</td><td>125%</td><td>—</td><td>—</td><td>2200g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/323107.png" alt="">Redemption</td><td>30</td><td>10%</td><td>15</td><td>100%</td><td>—</td><td>—</td><td>2300g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr data-sofw><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6616.png" alt="">Staff of Flowing Water</td><td data-base="35" data-bonus="40">35</td><td>10%</td><td data-base="10" data-bonus="15">10</td><td>125%</td><td>—</td><td>—</td><td>2250g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/323222.png" alt="">Mikael's Blessing</td><td>—</td><td>12%</td><td>15</td><td>100%</td><td>—</td><td>—</td><td>2300g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr data-dawncore><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/6621.png" alt="">Dawncore</td><td>45</td><td>16%</td><td>—</td><td>100%</td><td>—</td><td>—</td><td>2500g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/322065.png" alt="">Shurelya's Battlesong</td><td>50</td><td>—</td><td>15</td><td>125%</td><td>—</td><td>4%</td><td>2200g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3504.png" alt="">Ardent Censer</td><td>45</td><td>10%</td><td>—</td><td>125%</td><td>—</td><td>4%</td><td>2200g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr data-seraph><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/323040.png" alt="">Seraph's Embrace</td><td>70*</td><td>—</td><td>25</td><td>—</td><td>1000</td><td>—</td><td>2900g</td><td class="hli-cell">—</td><td>—</td></tr>
+        <tr data-ap-multiplier="1.3"><td><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/16.11.1/img/item/3089.png" alt="">Rabadon's Deathcap</td><td>130*</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>3500g</td><td class="hli-cell">—</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  </div>
+
+  <script>
+    const THUMB = 18;
+
+    function initRankSlider(panel) {
+      const slider = panel.querySelector('.rank-slider');
+      const N = parseInt(slider.max);
+      const labelGroups = panel.querySelectorAll('.rank-labels');
+
+      function positionLabels() {
+        const W = slider.offsetWidth;
+        labelGroups.forEach(group => {
+          group.querySelectorAll('span').forEach((span, i) => {
+            const pos = (THUMB / 2 + i * (W - THUMB) / (N - 1)) / W * 100;
+            span.style.left = pos + '%';
+          });
+        });
+      }
+
+      function updateActive(val) {
+        labelGroups.forEach(group => {
+          group.querySelectorAll('span').forEach((span, i) => {
+            span.classList.toggle('active', i + 1 === val);
+          });
+        });
+      }
+
+      slider.addEventListener('input', () => updateActive(parseInt(slider.value)));
+      positionLabels();
+      updateActive(parseInt(slider.value));
+    }
+
+    document.querySelectorAll('.panel').forEach(panel => {
+      if (panel.querySelector('.rank-slider')) initRankSlider(panel);
+    });
+
+    const itemRows = document.querySelectorAll('#item-table tbody tr:not(.section-divider)');
+
+    const tableSections = [{ divider: null, sectionIdx: 0 }];
+    let inCappedSection = false;
+    let sectionIdx = 0;
+    document.querySelectorAll('#item-table tbody tr').forEach(row => {
+      if (row.classList.contains('section-divider')) {
+        const label = row.textContent.trim().toLowerCase();
+        inCappedSection = label === 'full items' || label === 'medium items';
+        sectionIdx++;
+        tableSections.push({ divider: row, sectionIdx });
+        return;
+      }
+      row.dataset.stacks = '0';
+      row.dataset.section = sectionIdx;
+      if (inCappedSection) row.dataset.maxStacks = '1';
+      const badge = document.createElement('span');
+      badge.className = 'stack-badge';
+      row.querySelector('td').prepend(badge);
+    });
+
+    // Mark static dash cells for compact mode (skip Name col 0, GLD col 7, HLI col 8, HpG col 9)
+    itemRows.forEach(row => {
+      Array.from(row.cells).forEach((cell, i) => {
+        if (i === 0 || i >= 7) return;
+        if (cell.textContent.trim() === '—') cell.classList.add('dash-cell');
+      });
+    });
+
+    function parseStat(text) {
+      if (!text || text.trim() === '—') return 0;
+      return parseFloat(text.replace(/[^0-9.]/g, '')) || 0;
+    }
+
+    function applyMsDR(raw) {
+      return raw <= 415 ? raw : raw <= 490 ? raw * 0.8 + 83 : raw * 0.5 + 230;
+    }
+
+    let lastApMult = 1;
+    let lastRawMs  = 325;
+
+    function updateStats() {
+      const { ap, hsp, ah, rgn, mna, ms: msBase, gld, apMultiplier } = calcStats();
+      lastApMult = apMultiplier;
+      document.getElementById('stat-ap').textContent  = ap;
+      document.getElementById('stat-hsp').textContent = hsp ? hsp + '%' : '0';
+      document.getElementById('stat-ah').textContent  = ah;
+      document.getElementById('stat-rgn').textContent = rgn ? rgn + '%' : '0';
+      const celerityOn = document.getElementById('celerity').checked;
+      const ms = msBase + (celerityOn ? 1 : 0);
+      let msFlat = 0;
+      if (document.getElementById('waterwalking').checked) msFlat += 10;
+      if (document.getElementById('relentless-hunter').checked) {
+        msFlat += parseInt(document.getElementById('hunter-stacks').value) * 8;
+      }
+      document.getElementById('stat-ms-pct').textContent = ms ? ms + '%' : '0';
+      const rawMs = 325 + (325 * ms / 100 + msFlat) * (celerityOn ? 1.07 : 1);
+      lastRawMs = rawMs;
+      document.getElementById('stat-ms').textContent = Math.round(Math.max(110, applyMsDR(rawMs)));
+      document.getElementById('stat-mna').textContent = mna;
+      document.getElementById('stat-gld').textContent = gld ? gld + 'g' : '0';
+    }
+
+    function setStacks(row, count) {
+      const max = row.dataset.maxStacks ? parseInt(row.dataset.maxStacks) : Infinity;
+      count = Math.max(0, Math.min(count, max));
+      if (count === parseInt(row.dataset.stacks)) return;
+      row.dataset.stacks = count;
+      row.querySelector('.stack-badge').textContent = count > 1 ? `x${count} ` : '';
+      row.classList.toggle('selected', count > 0);
+      updateStats();
+    }
+
+    itemRows.forEach(row => {
+      row.addEventListener('click', () => setStacks(row, parseInt(row.dataset.stacks) + 1));
+      row.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        setStacks(row, parseInt(row.dataset.stacks) - 1);
+      });
+    });
+
+
+    function getResistanceMult() {
+      if (document.getElementById('use-armor').checked)
+        return 1 + (parseFloat(document.getElementById('input-armor').value) || 0) / 100;
+      if (document.getElementById('use-mr').checked)
+        return 1 + (parseFloat(document.getElementById('input-mr').value) || 0) / 100;
+      return 1;
+    }
+
+    const astralBaseHeal = [90, 100, 130, 150, 170];
+    const astralBaseCD   = [6, 5, 4, 3, 2];
+
+    function updateAstralCalcs() {
+      const rank = parseInt(document.querySelector('#astral-infusion .rank-slider').value) - 1;
+      const ap   = parseInt(document.getElementById('stat-ap').textContent) || 0;
+      const ah   = parseInt(document.getElementById('stat-ah').textContent) || 0;
+      const hspText = document.getElementById('stat-hsp').textContent;
+      const hsp = parseFloat(hspText) || 0;
+      const gw = document.getElementById('grievous-wounds').checked;
+
+      const moonstoneRow = document.querySelector('[data-moonstone]');
+      const moonstone = moonstoneRow && parseInt(moonstoneRow.dataset.stacks) > 0;
+
+      let heal = astralBaseHeal[rank] + ap * 0.5;
+      heal *= (1 + hsp / 100);
+      if (moonstone) heal *= 1.3;
+      heal *= getResistanceMult();
+      if (document.getElementById('spirit-visage').checked) heal *= 1.25;
+      heal *= getRevitalizeMult();
+      if (gw) heal *= 0.6;
+      heal = Math.round(heal);
+
+      const cd  = astralBaseCD[rank] / (1 + ah / 100);
+      const hps = heal / cd;
+
+      document.getElementById('astral-heal').textContent = heal;
+      document.getElementById('astral-cd').textContent   = cd.toFixed(2) + 's';
+      document.getElementById('astral-hps').textContent  = hps.toFixed(1);
+    }
+
+    const starcallBaseDam  = [85, 120, 155, 190, 225];
+    const starcallBaseHeal = [60, 75, 90, 105, 120];
+    const starcallBaseCD   = [8, 7, 6, 5, 4];
+
+    function updateStarcallCalcs() {
+      const rank = parseInt(document.querySelector('#starcall .rank-slider').value) - 1;
+      const ap   = parseInt(document.getElementById('stat-ap').textContent) || 0;
+      const hsp  = parseFloat(document.getElementById('stat-hsp').textContent) || 0;
+      const ah   = parseInt(document.getElementById('stat-ah').textContent) || 0;
+      const gw   = document.getElementById('grievous-wounds').checked;
+
+      const dam = Math.round(starcallBaseDam[rank] + ap * 0.35);
+      const cd  = starcallBaseCD[rank] / (1 + ah / 100);
+      const dps = dam / cd;
+
+      const moonstoneRow = document.querySelector('[data-moonstone]');
+      const moonstone = moonstoneRow && parseInt(moonstoneRow.dataset.stacks) > 0;
+
+      let heal = starcallBaseHeal[rank] + ap * 0.3;
+      heal *= (1 + hsp / 100);
+      if (moonstone) heal *= 1.3;
+      heal *= getResistanceMult();
+      if (document.getElementById('spirit-visage').checked) heal *= 1.25;
+      heal *= getRevitalizeMult();
+      if (gw) heal *= 0.6;
+
+      document.getElementById('starcall-dam').textContent  = dam;
+      document.getElementById('starcall-dps').textContent  = dps.toFixed(1);
+      document.getElementById('starcall-heal').textContent = Math.round(heal);
+      document.getElementById('starcall-cd').textContent   = cd.toFixed(2) + 's';
+    }
+
+    const wishBaseHeal = [150, 250, 350];
+    const wishBaseCD   = [150, 135, 120];
+
+    function getWishBonusAh() {
+      if (!document.getElementById('ultimate-hunter').checked) return 0;
+      const stacks = parseInt(document.getElementById('hunter-stacks').value);
+      return 6 + stacks * 5;
+    }
+
+    function updateWishCalcs() {
+      const rank = parseInt(document.querySelector('#wish .rank-slider').value) - 1;
+      const ap   = parseInt(document.getElementById('stat-ap').textContent) || 0;
+      const hsp  = parseFloat(document.getElementById('stat-hsp').textContent) || 0;
+      const ah   = (parseInt(document.getElementById('stat-ah').textContent) || 0) + getWishBonusAh();
+      const gw   = document.getElementById('grievous-wounds').checked;
+
+      const moonstoneRow = document.querySelector('[data-moonstone]');
+      const moonstone = moonstoneRow && parseInt(moonstoneRow.dataset.stacks) > 0;
+
+      let heal = wishBaseHeal[rank] + ap * 0.5;
+      if (document.getElementById('wish-40').checked) heal *= 1.5;
+      heal *= (1 + hsp / 100);
+      if (moonstone) heal *= 1.3;
+      heal *= getResistanceMult();
+      if (document.getElementById('spirit-visage').checked) heal *= 1.25;
+      heal *= getRevitalizeMult();
+      if (document.getElementById('axiom-arcanist').checked) heal *= 1.12;
+      if (gw) heal *= 0.6;
+      const cd = wishBaseCD[rank] / (1 + ah / 100);
+
+      document.getElementById('wish-heal').textContent = Math.round(heal);
+      document.getElementById('wish-cd').textContent   = cd.toFixed(2) + 's';
+    }
+
+    const equinoxBaseDam = [70, 95, 120, 145, 170];
+    const equinoxBaseCD  = [20, 19, 18, 17, 16];
+
+    function updateEquinoxCalcs() {
+      const rank = parseInt(document.querySelector('#equinox .rank-slider').value) - 1;
+      const ap   = parseInt(document.getElementById('stat-ap').textContent) || 0;
+      const ah   = parseInt(document.getElementById('stat-ah').textContent) || 0;
+
+      const dam = Math.round(equinoxBaseDam[rank] + ap * 0.40);
+      const cd  = equinoxBaseCD[rank] / (1 + ah / 100);
+
+      document.getElementById('equinox-dam').textContent = dam;
+      document.getElementById('equinox-cd').textContent  = cd.toFixed(2) + 's';
+    }
+
+    document.querySelector('#starcall .rank-slider').addEventListener('input', () => { updateStarcallCalcs(); updateComboTotal(); updateHLI(); updateComboBreakdown(); });
+    document.querySelector('#wish .rank-slider').addEventListener('input', updateWishCalcs);
+    document.getElementById('wish-40').addEventListener('change', () => updateStats());
+    document.getElementById('revitalize').addEventListener('change', () => updateStats());
+    document.getElementById('axiom-arcanist').addEventListener('change', () => updateStats());
+    document.querySelector('#astral-infusion .rank-slider').addEventListener('input', () => { updateAstralCalcs(); updateComboTotal(); updateHLI(); updateComboBreakdown(); });
+    document.querySelector('#equinox .rank-slider').addEventListener('input', updateEquinoxCalcs);
+    document.getElementById('grievous-wounds').addEventListener('change', () => {
+      updateStarcallCalcs(); updateAstralCalcs(); updateWishCalcs(); updateComboTotal(); updateHLI(); updateComboBreakdown();
+    });
+    document.getElementById('spirit-visage').addEventListener('change', () => {
+      updateStarcallCalcs(); updateAstralCalcs(); updateWishCalcs(); updateComboTotal(); updateHLI(); updateComboBreakdown();
+    });
+
+    document.getElementById('staff-of-flowing-water').addEventListener('change', e => {
+      const row = document.querySelector('[data-sofw]');
+      row.querySelectorAll('td[data-base]').forEach(cell => {
+        const base  = parseInt(cell.dataset.base);
+        const bonus = parseInt(cell.dataset.bonus);
+        cell.textContent = e.target.checked ? base + bonus : base;
+      });
+      updateStats();
+    });
+    // Apply bonus if browser persisted the checkbox as checked across a page reload
+    if (document.getElementById('staff-of-flowing-water').checked) {
+      document.getElementById('staff-of-flowing-water').dispatchEvent(new Event('change'));
+    }
+
+    document.getElementById('sofw-delay').addEventListener('change', () => updateStats());
+
+    // Returns 40 if SofW is selected with its bonus AP active, else 0.
+    function getSofwActiveBonus() {
+      if (!document.getElementById('staff-of-flowing-water').checked) return 0;
+      const sofwRow = document.querySelector('[data-sofw]');
+      if (!sofwRow || parseInt(sofwRow.dataset.stacks) === 0) return 0;
+      return 40;
+    }
+
+    // Returns the AP bonus the 1st W loses under SOFW Delay (only when checkbox is on).
+    function getSofwDelayBonus() {
+      return document.getElementById('sofw-delay').checked ? getSofwActiveBonus() : 0;
+    }
+
+    let prevCombo = null, prevMini = null;
+
+    function updateComboTotal() {
+      const { ap, hsp, moonstoneActive } = calcStats();
+      const combo = comboHealFromStats(ap, hsp, moonstoneActive);
+      const mini  = miniComboHealFromStats(ap, hsp, moonstoneActive);
+      document.getElementById('combo-total').textContent      = combo;
+      document.getElementById('mini-combo-total').textContent = mini;
+      setDiff('combo-diff',      combo, prevCombo);
+      setDiff('mini-combo-diff', mini,  prevMini);
+      prevCombo = combo;
+      prevMini  = mini;
+    }
+
+    function setDiff(id, current, prev) {
+      const el = document.getElementById(id);
+      if (prev === null || current === prev) { el.textContent = ''; el.className = 'combo-diff'; return; }
+      const d = current - prev;
+      el.textContent = d > 0 ? `(+${d})` : `(${d})`;
+      el.className = 'combo-diff ' + (d > 0 ? 'positive' : 'negative');
+    }
+
+    function calcStats() {
+      let ap = 0, hsp = 0, ah = 0, rgn = 0, ms = 0, mna = 0, gld = 0, apMultiplier = 1;
+      let seraphActive = false, dawncoreActive = false, moonstoneActive = false;
+      itemRows.forEach(row => {
+        const stacks = parseInt(row.dataset.stacks);
+        if (stacks === 0) return;
+        const cells = row.querySelectorAll('td');
+        ap  += parseStat(cells[1].textContent) * stacks;
+        if (!row.hasAttribute('data-no-hsp')) hsp += parseStat(cells[2].textContent) * stacks;
+        ah  += parseStat(cells[3].textContent) * stacks;
+        rgn += parseStat(cells[4].textContent) * stacks;
+        mna += parseStat(cells[5].textContent) * stacks;
+        ms  += parseStat(cells[6].textContent) * stacks;
+        gld += parseStat(cells[7].textContent) * stacks;
+        if (row.hasAttribute('data-seraph'))    seraphActive    = true;
+        if (row.hasAttribute('data-dawncore'))  dawncoreActive  = true;
+        if (row.hasAttribute('data-moonstone')) moonstoneActive = true;
+        if (row.dataset.apMultiplier) apMultiplier *= parseFloat(row.dataset.apMultiplier);
+      });
+      if (seraphActive)   ap += mna * 0.02;
+      if (dawncoreActive) { ap += (rgn / 100) * 10; hsp += (rgn / 100) * 2; }
+      if (document.getElementById('revitalize').checked) hsp += 5;
+      if (document.getElementById('shard-af-1').checked) ap += 9;
+      if (document.getElementById('shard-af-2').checked) ap += 9;
+      if (document.getElementById('shard-ah').checked)   ah += 8;
+      if (document.getElementById('shard-ms').checked)   ms += 2.5;
+      const level = parseInt(document.getElementById('level-slider').value);
+      if (document.getElementById('waterwalking').checked)    ap += 12 + level;
+      if (document.getElementById('absolute-focus').checked)  ap += Math.round(3 + (30 - 3) / 17 * (level - 1));
+      if (document.getElementById('transcendence').checked)   ah += level >= 8 ? 10 : level >= 5 ? 5 : 0;
+      if (document.getElementById('gathering-storm').checked) {
+        ap += [8, 24, 48, 80, 120][parseInt(document.getElementById('gs-slider').value) - 1];
+      }
+      ap = Math.round(ap * apMultiplier);
+      return { ap, hsp, ah, rgn, ms, mna, gld, apMultiplier, moonstoneActive };
+    }
+
+    function getRevitalizeMult() {
+      return document.getElementById('revitalize').checked && document.getElementById('wish-40').checked ? 1.1 : 1;
+    }
+
+    function comboHealFromStats(ap, hsp, moonstone, raw = false) {
+      const qRank = parseInt(document.querySelector('#starcall .rank-slider').value) - 1;
+      const wRank = parseInt(document.querySelector('#astral-infusion .rank-slider').value) - 1;
+      const gw = document.getElementById('grievous-wounds').checked;
+      const gwMult  = gw ? 0.6 : 1;
+      const moonMult = moonstone ? 1.3 : 1;
+      const hspMult  = 1 + hsp / 100;
+      const resMult  = getResistanceMult();
+      const svMult   = document.getElementById('spirit-visage').checked ? 1.25 : 1;
+      const revMult  = getRevitalizeMult();
+      const r = raw ? (x => x) : Math.round;
+      const delay = getSofwDelayBonus();
+      const qHeal  = r((starcallBaseHeal[qRank] + ap * 0.3) * hspMult * moonMult * resMult * svMult * revMult * gwMult);
+      const wHeal1 = r((astralBaseHeal[wRank] + (ap - delay) * 0.5) * hspMult * moonMult * resMult * svMult * revMult * gwMult);
+      const wHeal2 = r((astralBaseHeal[wRank] + ap * 0.5) * hspMult * moonMult * resMult * svMult * revMult * gwMult);
+      return qHeal + wHeal1 + wHeal2;
+    }
+
+    function miniComboHealFromStats(ap, hsp, moonstone, raw = false) {
+      const qRank = parseInt(document.querySelector('#starcall .rank-slider').value) - 1;
+      const wRank = parseInt(document.querySelector('#astral-infusion .rank-slider').value) - 1;
+      const gw = document.getElementById('grievous-wounds').checked;
+      const gwMult  = gw ? 0.6 : 1;
+      const moonMult = moonstone ? 1.3 : 1;
+      const hspMult  = 1 + hsp / 100;
+      const resMult  = getResistanceMult();
+      const svMult   = document.getElementById('spirit-visage').checked ? 1.25 : 1;
+      const revMult  = getRevitalizeMult();
+      const r = raw ? (x => x) : Math.round;
+      // In mini-combo the W is always the cast that triggers SofW, not a beneficiary.
+      const sofwBonus = getSofwActiveBonus();
+      const qHeal = r((starcallBaseHeal[qRank] + ap * 0.3) * hspMult * moonMult * resMult * svMult * revMult * gwMult);
+      const wHeal = r((astralBaseHeal[wRank] + (ap - sofwBonus) * 0.5) * hspMult * moonMult * resMult * svMult * revMult * gwMult);
+      return qHeal + wHeal;
+    }
+
+    function comboHealEx(ap, hsp, moonstone, opts = {}) {
+      const qRank  = parseInt(document.querySelector('#starcall .rank-slider').value) - 1;
+      const wRank  = parseInt(document.querySelector('#astral-infusion .rank-slider').value) - 1;
+      const wCount  = opts.wCount !== undefined ? opts.wCount : 2;
+      const gwMult  = (opts.gw !== undefined ? opts.gw : document.getElementById('grievous-wounds').checked) ? 0.6 : 1;
+      const moonMult = moonstone ? 1.3 : 1;
+      const hspMult  = 1 + hsp / 100;
+      const resMult  = getResistanceMult();
+      const svMult   = (opts.sv !== undefined ? opts.sv : document.getElementById('spirit-visage').checked) ? 1.25 : 1;
+      const revMult  = opts.revMult !== undefined ? opts.revMult : getRevitalizeMult();
+      const qHeal = Math.round((starcallBaseHeal[qRank] + ap * 0.3) * hspMult * moonMult * resMult * svMult * revMult * gwMult);
+      const wHeal = Math.round((astralBaseHeal[wRank]   + ap * 0.5) * hspMult * moonMult * resMult * svMult * revMult * gwMult);
+      return qHeal + wHeal * wCount;
+    }
+
+    function buildBreakdownEntries(wCount) {
+      const { ap, hsp, moonstoneActive } = calcStats();
+      const opts0 = { wCount };
+      const current = comboHealEx(ap, hsp, moonstoneActive, opts0);
+      const entries = [];
+
+      entries.push({ label: 'Spell base', value: comboHealEx(0, 0, false, opts0) });
+
+      itemRows.forEach(row => {
+        const stacks = parseInt(row.dataset.stacks);
+        if (stacks === 0) return;
+        const cells = row.querySelectorAll('td');
+        const name  = cells[0].textContent.trim();
+
+        if (row.hasAttribute('data-moonstone')) {
+          const moonstoneAp = Math.round(parseStat(cells[1].textContent) * stacks * lastApMult);
+          const delta = current - comboHealEx(ap - moonstoneAp, hsp, false, opts0);
+          if (delta) entries.push({ label: name, value: delta });
+          return;
+        }
+
+        if (row.dataset.apMultiplier) {
+          const rabMult = parseFloat(row.dataset.apMultiplier);
+          const rabBase = parseStat(cells[1].textContent) * stacks;
+          const apNoRab = Math.round((ap / lastApMult - rabBase) * (lastApMult / rabMult));
+          const delta = current - comboHealEx(apNoRab, hsp, moonstoneActive, opts0);
+          if (delta) entries.push({ label: name, value: delta });
+          return;
+        }
+
+        let itemAp  = parseStat(cells[1].textContent) * stacks;
+        const itemHsp = row.hasAttribute('data-no-hsp') ? 0 : parseStat(cells[2].textContent) * stacks;
+
+        if (row.hasAttribute('data-seraph')) {
+          itemAp += parseStat(cells[5].textContent) * stacks * 0.02;
+        }
+
+        if (row.hasAttribute('data-dawncore')) {
+          const itemRgn = parseStat(cells[4].textContent) * stacks;
+          itemAp += (itemRgn / 100) * 10;
+          const dawncoreHsp = itemHsp + (itemRgn / 100) * 2;
+          const delta = current - comboHealEx(ap - Math.round(itemAp * lastApMult), hsp - dawncoreHsp, moonstoneActive, opts0);
+          if (delta) entries.push({ label: name, value: delta });
+          return;
+        }
+
+        const delta = current - comboHealEx(ap - Math.round(itemAp * lastApMult), hsp - itemHsp, moonstoneActive, opts0);
+        if (delta) entries.push({ label: name, value: delta });
+      });
+
+      if (document.getElementById('spirit-visage').checked) {
+        const delta = current - comboHealEx(ap, hsp, moonstoneActive, { ...opts0, sv: false });
+        if (delta) entries.push({ label: 'Spirit Visage', value: delta });
+      }
+
+      if (document.getElementById('grievous-wounds').checked) {
+        const delta = current - comboHealEx(ap, hsp, moonstoneActive, { ...opts0, gw: false });
+        entries.push({ label: 'Grievous Wounds', value: delta });
+      }
+
+      if (document.getElementById('revitalize').checked) {
+        const wish40 = document.getElementById('wish-40').checked;
+        const delta = wish40
+          ? current - comboHealEx(ap, hsp - 5, moonstoneActive, { ...opts0, revMult: 1 })
+          : current - comboHealEx(ap, hsp - 5, moonstoneActive, opts0);
+        if (delta) entries.push({ label: 'Revitalize', value: delta });
+      }
+
+      const level = parseInt(document.getElementById('level-slider').value);
+      const gsVal = parseInt(document.getElementById('gs-slider').value);
+      [
+        { id: 'shard-af-1',     label: 'Adaptive Shard',  ap: 9 },
+        { id: 'shard-af-2',     label: 'Adaptive Shard',  ap: 9 },
+        { id: 'waterwalking',   label: 'Waterwalking',    ap: 12 + level },
+        { id: 'absolute-focus', label: 'Absolute Focus',  ap: Math.round(3 + 27 / 17 * (level - 1)) },
+        { id: 'gathering-storm',label: 'Gathering Storm', ap: [8, 24, 48, 80, 120][gsVal - 1] },
+      ].forEach(({ id, label, ap: runeAp }) => {
+        if (!document.getElementById(id).checked) return;
+        const delta = current - comboHealEx(ap - Math.round(runeAp * lastApMult), hsp, moonstoneActive, opts0);
+        if (delta) entries.push({ label, value: delta });
+      });
+
+      const base = entries.find(e => e.label === 'Spell base');
+      const rest = entries.filter(e => e.label !== 'Spell base')
+                          .sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+      return base ? [base, ...rest] : rest;
+    }
+
+    function renderBreakdown(id, entries) {
+      document.getElementById(id).innerHTML = entries.map(({ label, value }) =>
+        `<div class="breakdown-row">` +
+        `<span class="breakdown-label">${label}</span>` +
+        `<span class="breakdown-value${value < 0 ? ' negative' : ''}">${value > 0 ? '+' : ''}${value}</span>` +
+        `</div>`
+      ).join('');
+    }
+
+    function updateComboBreakdown() {
+      renderBreakdown('mini-combo-breakdown', buildBreakdownEntries(1));
+      renderBreakdown('combo-breakdown',      buildBreakdownEntries(2));
+    }
+
+    function qHealFromStats(ap, hsp, moonstone, raw = false) {
+      const rank    = parseInt(document.querySelector('#starcall .rank-slider').value) - 1;
+      const gwMult  = document.getElementById('grievous-wounds').checked ? 0.6 : 1;
+      const moonMult = moonstone ? 1.3 : 1;
+      const hspMult  = 1 + hsp / 100;
+      const resMult  = getResistanceMult();
+      const svMult   = document.getElementById('spirit-visage').checked ? 1.25 : 1;
+      const revMult  = getRevitalizeMult();
+      const val = (starcallBaseHeal[rank] + ap * 0.3) * hspMult * moonMult * resMult * svMult * revMult * gwMult;
+      return raw ? val : Math.round(val);
+    }
+
+    function wHealFromStats(ap, hsp, moonstone, raw = false) {
+      const rank    = parseInt(document.querySelector('#astral-infusion .rank-slider').value) - 1;
+      const gwMult  = document.getElementById('grievous-wounds').checked ? 0.6 : 1;
+      const moonMult = moonstone ? 1.3 : 1;
+      const hspMult  = 1 + hsp / 100;
+      const resMult  = getResistanceMult();
+      const svMult   = document.getElementById('spirit-visage').checked ? 1.25 : 1;
+      const revMult  = getRevitalizeMult();
+      const val = (astralBaseHeal[rank] + ap * 0.5) * hspMult * moonMult * resMult * svMult * revMult * gwMult;
+      return raw ? val : Math.round(val);
+    }
+
+    function wHpsFromStats(ap, hsp, moonstone, ah, raw = false) {
+      const rank = parseInt(document.querySelector('#astral-infusion .rank-slider').value) - 1;
+      const heal = wHealFromStats(ap, hsp, moonstone, raw);
+      const cd   = astralBaseCD[rank] / (1 + ah / 100);
+      return heal / cd;
+    }
+
+    function rHealFromStats(ap, hsp, moonstone, raw = false) {
+      const rank    = parseInt(document.querySelector('#wish .rank-slider').value) - 1;
+      const gwMult  = document.getElementById('grievous-wounds').checked ? 0.6 : 1;
+      const moonMult = moonstone ? 1.3 : 1;
+      const hspMult  = 1 + hsp / 100;
+      const resMult  = getResistanceMult();
+      const svMult   = document.getElementById('spirit-visage').checked ? 1.25 : 1;
+      const w40Mult  = document.getElementById('wish-40').checked ? 1.5 : 1;
+      const revMult  = getRevitalizeMult();
+      const aaMultR  = document.getElementById('axiom-arcanist').checked ? 1.12 : 1;
+      const val = (wishBaseHeal[rank] + ap * 0.5) * w40Mult * hspMult * moonMult * resMult * svMult * revMult * aaMultR * gwMult;
+      return raw ? val : Math.round(val);
+    }
+
+    function getHliBaseline(ap, hsp, moonstone, ah, raw = false) {
+      if (document.getElementById('hpsi-mode').checked)        return wHpsFromStats(ap, hsp, moonstone, ah, raw);
+      if (document.getElementById('hli-mode-q').checked)       return qHealFromStats(ap, hsp, moonstone, raw);
+      if (document.getElementById('hli-mode-w').checked)       return wHealFromStats(ap, hsp, moonstone, raw);
+      if (document.getElementById('hli-mode-r').checked)       return rHealFromStats(ap, hsp, moonstone, raw);
+      if (document.getElementById('hli-mode-mini').checked)    return miniComboHealFromStats(ap, hsp, moonstone, raw);
+      return comboHealFromStats(ap, hsp, moonstone, raw);
+    }
+
+    function updateHLI() {
+      const hpsiMode = document.getElementById('hpsi-mode').checked;
+      const { ap, hsp, ah, moonstoneActive } = calcStats();
+      const current = getHliBaseline(ap, hsp, moonstoneActive, ah, true);
+      itemRows.forEach(row => {
+        const hliCell = row.querySelector('.hli-cell');
+        const hpgCell = row.cells[9];
+        const origStacks = parseInt(row.dataset.stacks);
+        const max = row.dataset.maxStacks ? parseInt(row.dataset.maxStacks) : Infinity;
+        if (origStacks >= max) {
+          if (hliCell.textContent !== '—') hliCell.textContent = '—';
+          if (hpgCell.textContent !== '—') hpgCell.textContent = '—';
+          return;
+        }
+        row.dataset.stacks = origStacks + 1;
+        const { ap: ap2, hsp: hsp2, ah: ah2, moonstoneActive: moon2 } = calcStats();
+        const next = getHliBaseline(ap2, hsp2, moon2, ah2, true);
+        row.dataset.stacks = origStacks;
+        const delta = next - current;
+        if (hpsiMode) {
+          const hliVal = delta > 0 ? '+' + delta.toFixed(2) : delta.toFixed(2);
+          if (hliCell.textContent !== hliVal) hliCell.textContent = hliVal;
+          const gld = parseStat(row.cells[7].textContent);
+          const hpgVal = (delta > 0 && gld > 0) ? (delta / gld).toFixed(4) : '—';
+          if (hpgCell.textContent !== hpgVal) hpgCell.textContent = hpgVal;
+        } else {
+          const deltaInt = Math.round(delta);
+          const hliVal = deltaInt > 0 ? '+' + deltaInt : String(deltaInt);
+          if (hliCell.textContent !== hliVal) hliCell.textContent = hliVal;
+          const gld = parseStat(row.cells[7].textContent);
+          const hpgVal = (deltaInt > 0 && gld > 0) ? (deltaInt / gld).toFixed(2) : '—';
+          if (hpgCell.textContent !== hpgVal) hpgCell.textContent = hpgVal;
+        }
+      });
+      sortTable();
+    }
+
+    let sortCol = 7;
+    let sortDir = 'desc';
+
+    function updateRuneDeltas() {
+      const celerityOn   = document.getElementById('celerity').checked;
+      const celerityMult = celerityOn ? 1.07 : 1;
+      const level  = parseInt(document.getElementById('level-slider').value);
+      const stacks = parseInt(document.getElementById('hunter-stacks').value);
+      const gsVal  = parseInt(document.getElementById('gs-slider').value);
+
+      function apD(raw) { return Math.round(raw * lastApMult); }
+
+      function msFlip(id, flatMs) {
+        const checked  = document.getElementById(id).checked;
+        const rawDelta = flatMs * celerityMult;
+        return checked
+          ? Math.round(applyMsDR(lastRawMs)) - Math.round(applyMsDR(lastRawMs - rawDelta))
+          : Math.round(applyMsDR(lastRawMs + rawDelta)) - Math.round(applyMsDR(lastRawMs));
+      }
+
+      function set(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; }
+      function setHtml(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
+
+      // Transcendence
+      const trAh = level >= 8 ? 10 : level >= 5 ? 5 : 0;
+      set('delta-transcendence', trAh ? trAh + ' AH' : '');
+
+      // Celerity
+      let celMs;
+      if (!celerityOn) {
+        const rawWith = lastRawMs + (lastRawMs - 325) * 0.07 + 325 * 1.07 / 100;
+        celMs = Math.round(applyMsDR(rawWith)) - Math.round(applyMsDR(lastRawMs));
+      } else {
+        const rawWithout = 325 + (lastRawMs - 325) / 1.07 - 3.25;
+        celMs = Math.round(applyMsDR(lastRawMs)) - Math.round(applyMsDR(rawWithout));
+      }
+      set('delta-celerity', celMs > 0 ? celMs + ' MS' : '');
+
+      // Absolute Focus
+      set('delta-absolute-focus', apD(Math.round(3 + 27 / 17 * (level - 1))) + ' AP');
+
+      // Relentless Hunter
+      const rlMs = stacks > 0 ? msFlip('relentless-hunter', stacks * 8) : 0;
+      set('delta-relentless-hunter', rlMs > 0 ? rlMs + ' MS' : '');
+
+      // Ultimate Hunter
+      set('delta-ultimate-hunter', (6 + stacks * 5) + ' uAH');
+
+      // Waterwalking
+      set('delta-waterwalking-ap', apD(12 + level) + ' AP');
+      set('delta-waterwalking-ms', ' / ' + msFlip('waterwalking', 10) + ' MS');
+
+      // Gathering Storm
+      set('delta-gathering-storm', apD([8, 24, 48, 80, 120][gsVal - 1]) + ' AP');
+
+      // Revitalize
+      set('delta-revitalize', '5% HsP');
+
+      // Axiom Arcanist — no stats panel effect
+      set('delta-axiom-arcanist', '');
+
+      // Stat shards
+      set('delta-shard-ah',  '8 AH');
+      set('delta-shard-af-1', apD(9) + ' AP');
+      set('delta-shard-af-2', apD(9) + ' AP');
+      set('delta-shard-ms',  msFlip('shard-ms', 325 * 2.5 / 100) + ' MS');
+    }
+
+    let mouseOverItems = false;
+    let sortPending = false;
+
+    const _origUpdateStats = updateStats;
+    updateStats = function() { _origUpdateStats(); updateStarcallCalcs(); updateAstralCalcs(); updateWishCalcs(); updateEquinoxCalcs(); updateComboTotal(); updateHLI(); updateRuneDeltas(); updateComboBreakdown(); };
+    updateStarcallCalcs(); updateAstralCalcs(); updateWishCalcs(); updateEquinoxCalcs(); updateComboTotal(); updateHLI(); updateRuneDeltas(); updateComboBreakdown();
+
+    document.querySelectorAll('.resistance-field input[type="number"]').forEach(input => {
+      input.addEventListener('click', () => input.select());
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+      input.addEventListener('input', updateStats);
+    });
+
+    const useArmor = document.getElementById('use-armor');
+    const useMr    = document.getElementById('use-mr');
+    useArmor.addEventListener('change', () => { if (useArmor.checked) useMr.checked = false; updateStats(); });
+    useMr.addEventListener('change',    () => { if (useMr.checked) useArmor.checked = false; updateStats(); });
+
+    document.getElementById('clear-all').addEventListener('click', () => {
+      document.getElementById('clear-options').click();
+      document.getElementById('clear-items').click();
+      document.getElementById('runes-clear').click();
+      document.querySelectorAll('.rank-slider').forEach(s => {
+        s.value = s.min;
+        s.dispatchEvent(new Event('input'));
+      });
+      levelSlider.value = 1;
+      levelValue.textContent = '1';
+      hunterStacks.value = 0;
+      hunterStacksValue.textContent = '0';
+      updateStats();
+    });
+
+    document.getElementById('clear-options').addEventListener('click', () => {
+      document.querySelectorAll('#control-panel input[type="checkbox"]').forEach(cb => {
+        if (cb.checked) {
+          cb.checked = false;
+          cb.dispatchEvent(new Event('change'));
+        }
+      });
+      document.getElementById('input-armor').value = '';
+      document.getElementById('input-mr').value = '';
+      updateStats();
+    });
+
+    document.getElementById('clear-items').addEventListener('click', () => {
+      itemRows.forEach(row => setStacks(row, 0));
+    });
+
+    const levelSlider = document.getElementById('level-slider');
+    const levelValue  = document.getElementById('level-value');
+    levelSlider.addEventListener('input', () => { levelValue.textContent = levelSlider.value; updateStats(); });
+
+    document.getElementById('runes-clear').addEventListener('click', () => {
+      document.querySelectorAll('#runes-panel .runes-grid input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+      updateStats();
+    });
+
+    document.getElementById('absolute-focus').addEventListener('change', () => updateStats());
+    document.getElementById('transcendence').addEventListener('change', () => updateStats());
+    document.getElementById('celerity').addEventListener('change', () => updateStats());
+    document.getElementById('waterwalking').addEventListener('change', () => updateStats());
+    ['shard-ah', 'shard-af-1', 'shard-ms', 'shard-af-2'].forEach(id =>
+      document.getElementById(id).addEventListener('change', () => updateStats())
+    );
+    document.getElementById('gathering-storm').addEventListener('change', () => updateStats());
+    document.getElementById('relentless-hunter').addEventListener('change', () => updateStats());
+    document.getElementById('ultimate-hunter').addEventListener('change', () => updateStats());
+    const hunterStacks = document.getElementById('hunter-stacks');
+    const hunterStacksValue = document.getElementById('hunter-stacks-value');
+    hunterStacksValue.textContent = hunterStacks.value;
+    hunterStacks.addEventListener('input', () => {
+      hunterStacksValue.textContent = hunterStacks.value;
+      updateStats();
+    });
+    document.getElementById('gs-slider').addEventListener('input', () => updateStats());
+
+    document.querySelectorAll('.rune-group').forEach(group => {
+      group.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          if (cb.checked) {
+            group.querySelectorAll('input[type="checkbox"]').forEach(other => {
+              if (other !== cb) other.checked = false;
+            });
+          }
+        });
+      });
+    });
+
+    document.getElementById('hpsi-mode').addEventListener('change', e => {
+      const hliHeader = document.getElementById('hli-header');
+      const modeGroup = document.querySelector('.hli-mode-group');
+      if (e.target.checked) {
+        hliHeader.textContent = 'HPSI';
+        document.getElementById('hli-mode-w').checked = true;
+        modeGroup.style.opacity = '0.3';
+        modeGroup.style.pointerEvents = 'none';
+      } else {
+        hliHeader.textContent = 'HLI';
+        modeGroup.style.opacity = '';
+        modeGroup.style.pointerEvents = '';
+      }
+      updateHLI();
+    });
+
+    const hliModeIds = ['hli-mode-q', 'hli-mode-w', 'hli-mode-r', 'hli-mode-combo', 'hli-mode-mini'];
+    hliModeIds.forEach(id => {
+      document.getElementById(id).addEventListener('change', updateHLI);
+    });
+
+    function getSortValue(row, colIndex) {
+      if (!row.cells[colIndex]) return colIndex === 0 ? '' : 0;
+      const text = row.cells[colIndex].textContent.trim();
+      if (colIndex === 0) return text.toLowerCase();
+      if (text === '—') return 0;
+      return parseFloat(text.replace(/[^0-9.-]/g, '')) || 0;
+    }
+
+    const itemPanel = document.getElementById('item-table-panel');
+    itemPanel.addEventListener('mouseenter', () => { mouseOverItems = true; });
+    itemPanel.addEventListener('mouseleave', () => {
+      mouseOverItems = false;
+      if (sortPending) { sortPending = false; sortTable(); }
+    });
+
+    function sortTable() {
+      if (document.getElementById('smooth-sort').checked && mouseOverItems) {
+        sortPending = true;
+        return;
+      }
+      sortPending = false;
+      const tbody = document.querySelector('#item-table tbody');
+      const dividersOn = document.getElementById('toggle-dividers').checked;
+      const cmp = (a, b) => {
+        const va = getSortValue(a, sortCol), vb = getSortValue(b, sortCol);
+        if (typeof va === 'string') return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        return sortDir === 'asc' ? va - vb : vb - va;
+      };
+
+      const frag = document.createDocumentFragment();
+      if (dividersOn) {
+        tableSections.forEach(({ divider, sectionIdx: si }) => {
+          if (divider) frag.appendChild(divider);
+          const sectionItems = Array.from(itemRows).filter(r => parseInt(r.dataset.section) === si).sort(cmp);
+          sectionItems.forEach(r => frag.appendChild(r));
+        });
+      } else {
+        tableSections.forEach(({ divider }) => { if (divider) frag.appendChild(divider); });
+        Array.from(itemRows).sort(cmp).forEach(r => frag.appendChild(r));
+      }
+      tbody.appendChild(frag);
+    }
+
+    function updateSortIndicators() {
+      document.querySelectorAll('#item-table thead th').forEach((th, i) => {
+        th.classList.toggle('sort-active', i === sortCol);
+        th.setAttribute('data-sort-dir', i === sortCol ? sortDir : '');
+      });
+    }
+
+    document.querySelectorAll('#item-table thead th').forEach((th, i) => {
+      th.addEventListener('click', () => {
+        sortDir = (sortCol === i && sortDir === 'desc') ? 'asc' : 'desc';
+        sortCol = i;
+        updateSortIndicators();
+        sortTable();
+      });
+    });
+
+    document.getElementById('toggle-dividers').addEventListener('change', e => {
+      document.getElementById('item-table').classList.toggle('no-dividers', !e.target.checked);
+      sortTable();
+    });
+
+
+    document.getElementById('item-table').classList.add('no-dividers');
+    updateSortIndicators();
+    sortTable();
+
+    const tooltip = document.getElementById('tooltip');
+    document.documentElement.appendChild(tooltip); // move outside body's zoom: 1.1
+    let tooltipTarget = null;
+
+    document.addEventListener('contextmenu', e => {
+      const cb = e.target.closest('label')?.querySelector('input[type="checkbox"]')
+               ?? (e.target.matches('input[type="checkbox"]') ? e.target : null);
+      if (!cb) return;
+      e.preventDefault();
+      if (cb.checked) { cb.checked = false; cb.dispatchEvent(new Event('change')); }
+    });
+
+    document.addEventListener('mouseover', e => {
+      const el = e.target.closest('[data-tooltip]');
+      if (el === tooltipTarget) return;
+      tooltipTarget = el;
+      if (!el) { tooltip.style.display = 'none'; return; }
+      tooltip.textContent = el.dataset.tooltip;
+      tooltip.style.display = 'block';
+    }, true);
+
+    document.addEventListener('mouseout', e => {
+      if (!tooltipTarget) return;
+      if (!tooltipTarget.contains(e.relatedTarget)) {
+        tooltipTarget = null;
+        tooltip.style.display = 'none';
+      }
+    }, true);
+
+    document.addEventListener('mousemove', e => {
+      if (tooltip.style.display !== 'block') return;
+      const tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
+      const x = e.clientX + 14, y = e.clientY + 14;
+      tooltip.style.left = (x + tw > window.innerWidth  ? e.clientX - tw - 6 : x) + 'px';
+      tooltip.style.top  = (y + th > window.innerHeight ? e.clientY - th - 6 : y) + 'px';
+    }, true);
+
+    async function compress(str) {
+      const bytes = new TextEncoder().encode(str);
+      const cs = new CompressionStream('deflate-raw');
+      const writer = cs.writable.getWriter();
+      writer.write(bytes);
+      writer.close();
+      const buf = await new Response(cs.readable).arrayBuffer();
+      return btoa(String.fromCharCode(...new Uint8Array(buf)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+
+    async function decompress(b64) {
+      const bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
+      const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+      const ds = new DecompressionStream('deflate-raw');
+      const writer = ds.writable.getWriter();
+      writer.write(bytes);
+      writer.close();
+      const buf = await new Response(ds.readable).arrayBuffer();
+      return new TextDecoder().decode(buf);
+    }
+
+    function gatherState() {
+      const items = {};
+      document.querySelectorAll('#item-table tbody tr:not(.section-divider)').forEach(row => {
+        const stacks = parseInt(row.dataset.stacks) || 0;
+        if (stacks > 0) items[row.querySelector('td').textContent.trim()] = stacks;
+      });
+
+      const cbIds = [
+        'grievous-wounds', 'spirit-visage', 'wish-40', 'staff-of-flowing-water', 'sofw-delay',
+        'use-armor', 'use-mr',
+        'transcendence', 'celerity', 'absolute-focus', 'waterwalking', 'gathering-storm',
+        'relentless-hunter', 'ultimate-hunter', 'revitalize', 'axiom-arcanist',
+        'shard-ah', 'shard-af-1', 'shard-ms', 'shard-af-2',
+      ];
+      const checkboxes = {};
+      cbIds.forEach(id => { if (document.getElementById(id)?.checked) checkboxes[id] = 1; });
+
+      const hliMode = ['hli-mode-q', 'hli-mode-w', 'hli-mode-r', 'hli-mode-combo', 'hli-mode-mini']
+        .find(id => document.getElementById(id).checked) || 'hli-mode-combo';
+
+      return {
+        v: 1,
+        items,
+        checkboxes,
+        sliders: {
+          q:      parseInt(document.querySelector('#starcall .rank-slider').value),
+          w:      parseInt(document.querySelector('#astral-infusion .rank-slider').value),
+          r:      parseInt(document.querySelector('#wish .rank-slider').value),
+          e:      parseInt(document.querySelector('#equinox .rank-slider').value),
+          level:  parseInt(document.getElementById('level-slider').value),
+          gs:     parseInt(document.getElementById('gs-slider').value),
+          stacks: parseInt(document.getElementById('hunter-stacks').value),
+        },
+        resistance: {
+          armor: parseFloat(document.getElementById('input-armor').value) || 0,
+          mr:    parseFloat(document.getElementById('input-mr').value) || 0,
+        },
+        view: {
+          hliMode,
+          hpsi:     document.getElementById('hpsi-mode').checked,
+          dividers: document.getElementById('toggle-dividers').checked,
+        },
+      };
+    }
+
+    function applyState(state) {
+      document.getElementById('clear-all').click();
+
+      if (state.items) {
+        document.querySelectorAll('#item-table tbody tr:not(.section-divider)').forEach(row => {
+          const name = row.querySelector('td').textContent.trim();
+          if (state.items[name]) setStacks(row, state.items[name]);
+        });
+      }
+
+      if (state.checkboxes) {
+        Object.keys(state.checkboxes).forEach(id => {
+          const el = document.getElementById(id);
+          if (el && !el.checked) el.click();
+        });
+      }
+
+      if (state.sliders) {
+        const fire = (el, val) => { if (el) { el.value = val; el.dispatchEvent(new Event('input')); } };
+        fire(document.querySelector('#starcall .rank-slider'),        state.sliders.q);
+        fire(document.querySelector('#astral-infusion .rank-slider'), state.sliders.w);
+        fire(document.querySelector('#wish .rank-slider'),            state.sliders.r);
+        fire(document.querySelector('#equinox .rank-slider'),         state.sliders.e);
+        fire(document.getElementById('level-slider'),  state.sliders.level);
+        fire(document.getElementById('gs-slider'),     state.sliders.gs);
+        fire(document.getElementById('hunter-stacks'), state.sliders.stacks);
+      }
+
+      if (state.resistance) {
+        document.getElementById('input-armor').value = state.resistance.armor || '';
+        document.getElementById('input-mr').value    = state.resistance.mr    || '';
+        updateStats();
+      }
+
+      if (state.view) {
+        const setcb = (id, want) => { const el = document.getElementById(id); if (el && el.checked !== want) el.click(); };
+        setcb('hpsi-mode',       !!state.view.hpsi);
+        setcb('toggle-dividers', !!state.view.dividers);
+        const hliId = state.view.hliMode || 'hli-mode-combo';
+        if (!document.getElementById(hliId).checked)
+          document.querySelector(`label:has(#${hliId})`).click();
+      }
+    }
+
+    document.getElementById('export-state').addEventListener('click', async () => {
+      const btn = document.getElementById('export-state');
+      try {
+        const str = await compress(JSON.stringify(gatherState()));
+        await navigator.clipboard.writeText(str);
+        btn.textContent = 'COPIED!';
+        btn.classList.add('btn-success');
+      } catch {
+        btn.textContent = 'ERROR';
+      }
+      setTimeout(() => { btn.textContent = 'EXPORT'; btn.classList.remove('btn-success'); }, 1500);
+    });
+
+    document.getElementById('import-state').addEventListener('click', async () => {
+      const input = window.prompt('Paste import string:');
+      if (!input) return;
+      try {
+        const state = JSON.parse(await decompress(input.trim()));
+        applyState(state);
+      } catch {
+        alert('Invalid import string.');
+      }
+    });
+
+    const comboPanel = document.getElementById('combo-panel');
+    const debugDiff = document.getElementById('debug-diff');
+    comboPanel.classList.toggle('hide-combo-diff', !debugDiff.checked);
+    debugDiff.addEventListener('change', () => comboPanel.classList.toggle('hide-combo-diff', !debugDiff.checked));
+
+    const flashObserver = new MutationObserver(mutations => {
+      if (!document.getElementById('debug-flashes').checked) return;
+      for (const m of mutations) {
+        const el = m.type === 'characterData' ? m.target.parentElement : m.target;
+        if (!el || !el.isConnected) continue;
+        el.classList.remove('debug-flash');
+        void el.getBoundingClientRect();
+        el.classList.add('debug-flash');
+      }
+    });
+    flashObserver.observe(document.body, { subtree: true, childList: true, characterData: true });
+
+    const flashChangePrev = new Map();
+    // Seed initial values so the first user-triggered change is caught correctly
+    document.body.querySelectorAll('*').forEach(el => {
+      if (el.childElementCount === 0 && el.textContent) flashChangePrev.set(el, el.textContent);
+    });
+
+    const flashChangeObserver = new MutationObserver(mutations => {
+      if (!document.getElementById('debug-flashes-onchange').checked) return;
+      for (const m of mutations) {
+        let el, oldVal, newVal;
+        if (m.type === 'characterData') {
+          if (m.oldValue === m.target.data) continue;
+          el = m.target.parentElement;
+        } else {
+          el = m.target;
+          if (el.childElementCount > 0) continue; // skip container mutations (e.g. tbody from sort reordering)
+          newVal = el.textContent;
+          oldVal = flashChangePrev.get(el);
+          flashChangePrev.set(el, newVal);
+          if (oldVal === undefined || oldVal === newVal) continue;
+        }
+        if (!el || !el.isConnected) continue;
+        el.classList.remove('debug-flash-change');
+        void el.getBoundingClientRect();
+        el.classList.add('debug-flash-change');
+      }
+    });
+    flashChangeObserver.observe(document.body, {
+      subtree: true, childList: true,
+      characterData: true, characterDataOldValue: true,
+    });
+
+    function positionActions() {
+      const zoom = parseFloat(getComputedStyle(document.body).zoom) || 1;
+      const statsRect = document.getElementById('stats-panel').getBoundingClientRect();
+      const runesRect = document.getElementById('center-col').getBoundingClientRect();
+      const midX = ((statsRect.right + runesRect.left) / 2) / zoom;
+      document.getElementById('top-actions').style.left  = midX + 'px';
+      document.getElementById('debug-toggles').style.left = midX + 'px';
+    }
+    window.addEventListener('resize', positionActions);
+    positionActions();
+  </script>
+</html>
